@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(
-    name='Optimal_Coclust',
+    name='optimal_cocluster',
     version='0.1.1',
-    packages=['Optimal_Coclust'],
+    packages=['optimal_cocluster'],
     url='https://github.com/JohannMue/Optimal_Coclust',
     license='GPL-3.0',
     author='J',

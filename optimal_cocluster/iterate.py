@@ -1,9 +1,9 @@
 from datetime import datetime
 import numpy
 from coclust.coclustering import CoclustSpecMod, CoclustMod, CoclustInfo
-from Optimal_Coclust.BIC import bic_cocluster
+from optimal_cocluster.bic import bic_cocluster
 import warnings
-from Optimal_Coclust.HelperFunctions import progress
+from optimal_cocluster.helperfunctions import progress
 
 
 def coclust_iterate(matrix,

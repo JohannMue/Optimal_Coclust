@@ -1,4 +1,4 @@
-Optimal-Coclust - evaluating cocluster quality
+OptimalCoclust - evaluating cocluster quality
 ==============================================
 
 This package provides simple tools to evaulate coclustering solutions.
