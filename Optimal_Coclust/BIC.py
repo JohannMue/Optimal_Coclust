@@ -64,6 +64,13 @@ def bic_cocluster(matrix, colpartition=None, rowpartition=None, appromatrix=None
 
 
 def _matrix_information(matrix):
+    """
+    determines mutual information of a joint distribution
+    For more information see: Dhillon, I. S., Mallela, S., & Modha, D. S. (2003, August). Information-theoretic co-clustering. In Proceedings of the ninth ACM SIGKDD international conference on Knowledge discovery and data mining (pp. 89-98).
+    :param matrix: joint distribution or approximation
+    :return: mutual information
+    """
+    matrix = 1.0 * matrix / np.sum(matrix, axis=None, keepdims=True)
     I = 0
     for s in range(matrix.shape[0]):
         for f in range(matrix.shape[1]):
@@ -79,7 +86,18 @@ def _matrix_information(matrix):
             I = I + p_sf * np.log2(p_sf / (p_s * p_f))
     return I
 
-def approximation_from_partition(matrix,rowpartition, colpartition):
+def approximation_from_partition(matrix,
+                                 rowpartition,
+                                 colpartition):
+    """
+    calculate an approximation of joint distribution based on a distribution and a corresponding co-clustering solution
+    expressed in row and column labels
+    :param matrix: the initial distribution, usually empirical
+    :param rowpartition: list of row cluster labels
+    :param colpartition: list of column cluster labels
+    :return: list of two: [0]: approximation of distribution (2d numpy array),
+    [1]: corresponding joint distribution of clusters (2d numpy array)
+    """
     rowpartition = standardize_partition(rowpartition)
     colpartition = standardize_partition(colpartition)
     # use partitioning to determine approximate probabilities
@@ -103,20 +121,20 @@ def approximation_from_partition(matrix,rowpartition, colpartition):
     # b = column probability relative to colcluster probability
     # c = row probability relative to rowcluster probability
     approx_matrix = matrix * 0
-    joint_dist = np.array([0] * (len(np.unique(rowpartition))*len(np.unique(colpartition))))
-    joint_dist.shape = (len(np.unique(rowpartition)),len(np.unique(colpartition)))
+    cluster_dist = np.array([0] * (len(np.unique(rowpartition))*len(np.unique(colpartition))))
+    cluster_dist.shape = (len(np.unique(rowpartition)),len(np.unique(colpartition)))
 
     for colindx, colval in enumerate(colpartition):
         for rowindx, rowval in enumerate(rowpartition):
             cols = list(np.where(np.array(colpartition) == colval)[0])
             rows = list(np.where(np.array(rowpartition) == rowval)[0])
             a = np.sum(matrix[np.ix_(rows, cols)], axis=None)
-            joint_dist[rowval,colval] = a
+            cluster_dist[rowval,colval] = a
             b = colsums[colindx] / colsums_clustprop[colindx]
             c = rowsums[rowindx] / rowsums_clustprop[rowindx]
             temp = a * b * c
             approx_matrix[rowindx, colindx] = temp
-    return approx_matrix,joint_dist
+    return approx_matrix,cluster_dist
 
 
 def standardize_partition(partition):
