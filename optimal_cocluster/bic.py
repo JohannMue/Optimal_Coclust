@@ -39,28 +39,40 @@ def bic_cocluster(matrix, colpartition=None, rowpartition=None, appromatrix=None
     # normalize matrix from 0 to 1
     approx_matrix = 1.0 * approx_matrix / np.sum(approx_matrix, axis=None, keepdims=True)
 
+
     # calculate mutual information
     # dimensionality
-    m = matrix.shape[0]  # number of rows
-    n = matrix.shape[1]  # number of cols
+    m, n = matrix.shape  # number of rows, cols
 
-    k = len(np.unique(rowpartition))  # number of rowclusters
-    l = len(np.unique(colpartition))  # number of colclusters
     # calculate mutual information of contingency tables
     # before clustering
     I = _matrix_information(matrix)
     # after clustering
     I_star = _matrix_information(approx_matrix)
 
-    lmda = m * n  # weight
-    information_relation = I_star / I
+    lmda = m * n  # tuning parameter
+    mi_relation = _mi__relation(I1=I, I2=I_star)  # data likelihood
+    complexity = _complexity(matrix=matrix, colpartition=colpartition, rowpartition=rowpartition)
+    BIC = lmda * mi_relation - complexity
+    return BIC, lmda, mi_relation, complexity
+
+
+def _complexity(matrix, colpartition, rowpartition):
+    k = len(np.unique(rowpartition))  # number of rowclusters
+    l = len(np.unique(colpartition))  # number of colclusters
+    m, n = matrix.shape  # number of rows
+
+    complexity = (((n * k) / 2) * np.log(m) + ((m * l) / 2) * np.log(n))
+    return complexity
+
+
+def _mi__relation(I1, I2):
+    information_relation = I2 / I1
     # log(0) prevention
     if information_relation <= 0.00000000001:
         information_relation = 0.00000000001
     mi_relation = np.log(information_relation)  # data likelihood
-    complexity = (((n * k) / 2) * np.log(m) + ((m * l)/ 2) * np.log(n))
-    BIC = lmda * mi_relation - complexity
-    return BIC, lmda, mi_relation, complexity
+    return mi_relation
 
 
 def _matrix_information(matrix):
