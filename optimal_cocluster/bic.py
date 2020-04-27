@@ -56,7 +56,7 @@ def bic_cocluster(matrix, colpartition=None, rowpartition=None, appromatrix=None
     mi_relation = _mi__relation(i1=i_ori, i2=i_star)  # data likelihood
     complexity = _complexity(matrix=matrix, colpartition=colpartition, rowpartition=rowpartition)
     bic = lmda * mi_relation - complexity
-    return bic, lmda, mi_relation, complexity
+    return bic, lmda, mi_relation, complexity,approx_matrix
 
 
 def _complexity(matrix, colpartition, rowpartition):
