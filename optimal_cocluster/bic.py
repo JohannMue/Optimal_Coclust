@@ -81,7 +81,7 @@ def _matrix_information(matrix):
     """
     determines mutual information of a joint distribution
     For more information see: Dhillon, I. S., Mallela, S., & Modha, D. S. (2003, August). Information-theoretic
-    co-clustering. In Proceedings of the ninth ACM SIGKDD international conference on Knowledge discovery and 
+    co-clustering. In Proceedings of the ninth ACM SIGKDD international conference on Knowledge discovery and
     data mining (pp. 89-98).
     :param matrix: joint distribution or approximation
     :return: mutual information
@@ -158,5 +158,5 @@ def standardize_partition(partition):
     :param partition: list of partition labels, str, int or otherwise
     :return: standardized integer labels
     """
-    p = [np.where(i == np.unique(np.array(partition)))[0][0] for i in np.array(partition)]
-    return p
+    std_partition = [np.where(i == np.unique(np.array(partition)))[0][0] for i in np.array(partition)]
+    return std_partition
