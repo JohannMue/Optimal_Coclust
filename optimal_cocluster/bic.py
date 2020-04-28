@@ -1,4 +1,5 @@
 import numpy as np
+from optimal_cocluster.helperfunctions import no_0
 
 
 def bic_cocluster(matrix, colpartition=None, rowpartition=None, appromatrix=None):
@@ -17,13 +18,7 @@ def bic_cocluster(matrix, colpartition=None, rowpartition=None, appromatrix=None
     :param appromatrix: Contingency table or joint distribution for clustered solution (optional) if not provided, this
     table is calculated from row and col partitions
 
-    :return: list containing BIC, lmda, mi_relation, complexity
-    BIC:  Bayesian information criterion
-    lmda: tuning parameter for weighting the data likelihood
-    mi_relation: data likelihood based on mutual information
-    complexity: data complexity
-    BIC is calculated from lmda * mi_relation - complexity
-    Values are provided separately to allow use of different lamda values without repeating the clustering
+    :return:
     """
     rowpartition = standardize_partition(rowpartition)
     colpartition = standardize_partition(colpartition)
@@ -31,18 +26,21 @@ def bic_cocluster(matrix, colpartition=None, rowpartition=None, appromatrix=None
     # calculate probabilities from data
     # normalize matrix from 0 to 1
     matrix = 1.0 * matrix / np.sum(matrix, axis=None, keepdims=True)
-
+    co_dist = co_joint_dist(matrix=matrix,
+                            rowpartition=rowpartition,
+                            colpartition=colpartition)
     if appromatrix is None:
-        approx_matrix = approximation_from_partition(matrix=matrix,
-                                                     rowpartition=rowpartition,
-                                                     colpartition=colpartition)[0]
+
+        approx_dist = approx_joint_dist(matrix=matrix,
+                                        rowpartition=rowpartition,
+                                        colpartition=colpartition,
+                                        co_dist=co_dist)
     else:
-        approx_matrix = np.array(appromatrix)
+        approx_dist = np.array(appromatrix)
 
     # normalize matrix from 0 to 1
-    approx_matrix = 1.0 * approx_matrix / np.sum(approx_matrix, axis=None, keepdims=True)
+    approx_dist = 1.0 * approx_dist / np.sum(approx_dist, axis=None, keepdims=True)
 
-    # calculate mutual information
     # dimensionality
     m, n = matrix.shape  # number of rows, cols
 
@@ -50,13 +48,15 @@ def bic_cocluster(matrix, colpartition=None, rowpartition=None, appromatrix=None
     # before clustering
     i_ori = _matrix_information(matrix)
     # after clustering
-    i_star = _matrix_information(approx_matrix)
+    i_star = _matrix_information(approx_dist)
 
     lmda = m * n  # tuning parameter
     mi_relation = _mi__relation(i1=i_ori, i2=i_star)  # data likelihood
     complexity = _complexity(matrix=matrix, colpartition=colpartition, rowpartition=rowpartition)
     bic = lmda * mi_relation - complexity
-    return bic, lmda, mi_relation, complexity,approx_matrix
+    return {"BIC": bic,
+            "Approximate Distribution": approx_dist,
+            "Cocluster Distribution": co_dist}
 
 
 def _complexity(matrix, colpartition, rowpartition):
@@ -69,10 +69,7 @@ def _complexity(matrix, colpartition, rowpartition):
 
 
 def _mi__relation(i1, i2):
-    information_relation = i2 / i1
-    # log(0) prevention
-    if information_relation <= 0.00000000001:
-        information_relation = 0.00000000001
+    information_relation = no_0(i2 / i1)
     mi_relation = np.log(information_relation)  # data likelihood
     return mi_relation
 
@@ -90,30 +87,25 @@ def _matrix_information(matrix):
     information = 0
     for s in range(matrix.shape[0]):
         for f in range(matrix.shape[1]):
-            p_sf = matrix[s, f]
-            if p_sf == 0:
-                p_sf = 0.00000000001
-            p_s = np.sum(matrix[s])
-            if p_s == 0:
-                p_s = 0.00000000001
-            p_f = np.sum(matrix[:, f])
-            if p_f == 0:
-                p_f = 0.00000000001
+            p_sf = no_0(matrix[s, f])
+            p_s = no_0(np.sum(matrix[s]))
+            p_f = no_0(np.sum(matrix[:, f]))
             information = information + p_sf * np.log2(p_sf / (p_s * p_f))
     return information
 
 
-def approximation_from_partition(matrix,
-                                 rowpartition,
-                                 colpartition):
+def approx_joint_dist(matrix,
+                      rowpartition,
+                      co_dist,
+                      colpartition):
     """
     calculate an approximation of joint distribution based on a distribution and a corresponding co-clustering solution
     expressed in row and column labels
     :param matrix: the initial distribution, usually empirical
+    :param co_dist: joint distribution of coclusters, from  co_joint_dist()
     :param rowpartition: list of row cluster labels
     :param colpartition: list of column cluster labels
-    :return: list of two: [0]: approximation of distribution (2d numpy array),
-    [1]: corresponding joint distribution of clusters (2d numpy array)
+    :return: 2d arrayjoint distribution approximated from original distribution and clustering
     """
     # normalize matrix from 0 to 1
     matrix = 1.0 * matrix / np.sum(matrix, axis=None, keepdims=True)
@@ -122,11 +114,39 @@ def approximation_from_partition(matrix,
     colpartition = standardize_partition(colpartition)
     # use partitioning to determine approximate probabilities
     # Marginal probabilities
-    p_x = np.sum(matrix, axis=0)
-    p_y = np.sum(matrix, axis=1)
+    p_x = np.sum(matrix, axis=0) #
+    p_y = np.sum(matrix, axis=1) #
 
-    # cocluster joint distribution
-    p_cxy = np.array([0] * (len(np.unique(rowpartition)) * len(np.unique(colpartition))))
+    p_cxy = co_dist #
+    # Marginal probabilities of joint distribution
+    p_cx = np.sum(p_cxy, axis=0) #
+    p_cy = np.sum(p_cxy, axis=1) #
+
+    # approximate joint distribution
+    p_xy = matrix * 0.0
+    for l_indx, l in enumerate(colpartition):
+        for k_indx, k in enumerate(rowpartition):
+            p_kl = p_cxy[k, l]
+            a = p_x[l_indx] / no_0(p_cx[l])
+            b = p_y[k_indx] / no_0(p_cy[k])
+            temp = p_kl * a * b
+            p_xy[k_indx, l_indx] = temp
+    return p_xy
+
+
+def co_joint_dist(matrix,
+                  rowpartition,
+                  colpartition):
+    """
+    calculates cocluster joint distribution from data and partitioning
+    :param matrix: the initial distribution, usually empirical
+    :param rowpartition: list of row cluster labels
+    :param colpartition: list of column cluster labels
+    :return: 2d array cocluster joint distribution
+    """
+    rowpartition = standardize_partition(rowpartition)
+    colpartition = standardize_partition(colpartition)
+    p_cxy = np.array([0.0] * (len(np.unique(rowpartition)) * len(np.unique(colpartition))))
     p_cxy.shape = (len(np.unique(rowpartition)), len(np.unique(colpartition)))
     for l in set(colpartition):
         for k in set(rowpartition):
@@ -134,22 +154,7 @@ def approximation_from_partition(matrix,
             rows = list(np.where(np.array(rowpartition) == k)[0])
             p_kl = np.sum(matrix[np.ix_(rows, cols)], axis=None)
             p_cxy[k, l] = p_kl
-
-    # Marginal probabilities of joint distribution
-    p_cx = np.sum(p_cxy, axis=0)
-    p_cy = np.sum(p_cxy, axis=1)
-
-    # approximate joint distribution
-    #
-    p_xy = matrix * 0
-    for l in colpartition:
-        for k in rowpartition:
-            p_kl = p_cxy[k, l]
-            a = p_x[l] / p_cx[l]
-            b = p_y[k] / p_cy[k]
-            temp = p_kl * a * b
-            p_xy[k, l] = temp
-    return p_xy, p_cxy
+    return p_cxy
 
 
 def standardize_partition(partition):

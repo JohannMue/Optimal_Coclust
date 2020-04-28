@@ -68,3 +68,14 @@ def progress(step, total):
     sys.stdout.write('\r')
     sys.stdout.write("[%-20s] %d%%" % ('=' * int(step/total*20), int(step/total*100)))
     sys.stdout.flush()
+
+
+def no_0(value):
+    """
+    prevent absolute 0 values
+    :param value:
+    :return:
+    """
+    if value < 0.00000000001:
+        value = 0.00000000001
+    return value
