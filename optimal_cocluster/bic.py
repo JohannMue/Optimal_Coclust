@@ -114,13 +114,13 @@ def approx_joint_dist(matrix,
     colpartition = standardize_partition(colpartition)
     # use partitioning to determine approximate probabilities
     # Marginal probabilities
-    p_x = np.sum(matrix, axis=0) #
-    p_y = np.sum(matrix, axis=1) #
+    p_x = np.sum(matrix, axis=0)
+    p_y = np.sum(matrix, axis=1)
 
-    p_cxy = co_dist #
+    p_cxy = co_dist
     # Marginal probabilities of joint distribution
-    p_cx = np.sum(p_cxy, axis=0) #
-    p_cy = np.sum(p_cxy, axis=1) #
+    p_cx = np.sum(p_cxy, axis=0)
+    p_cy = np.sum(p_cxy, axis=1)
 
     # approximate joint distribution
     p_xy = matrix * 0.0
