@@ -26,5 +26,5 @@ evaluation = iterate.bic_models(models=example_models, matrix=binary_sample)
 top_results = identify_top_bic(evaluation=evaluation, n_top=5)
 
 # further extract the model from the top models
-# Recommendation: select the with minimal complexity (k*l)
+# Recommendation: select the one with minimal complexity (k*l)
 selected_model = top_results['best_n_models'][0]
