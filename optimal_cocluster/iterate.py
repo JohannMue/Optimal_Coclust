@@ -97,8 +97,8 @@ def bic_models(models,
     return evaluation
 
 
-def identify_top_bic(evaluation,
-                     n_top=5):
+def process_results(evaluation,
+                    n_top=5):
     """
     Find the n models with the highest BIC
     :param evaluation: results from bic_models()
