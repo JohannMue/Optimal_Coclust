@@ -80,12 +80,16 @@ def bic_models(models,
     :param
     :return: complete bic list(corresponds to the model list)
     """
-    results = []
+    results = {"BIC": [],
+            "Approximate Distribution": [],
+            "Cocluster Distribution": []}
     now = datetime.now()
     print(now.strftime("%d%m%H:%M"), "Evaluating ", len(models), "models ...")
     for step, model in enumerate(models):
         result = bic_cocluster(colpartition=model.column_labels_, rowpartition=model.row_labels_, matrix=matrix)
-        results.append(result)
+        results["BIC"].append(result["BIC"])
+        results["Approximate Distribution"].append(result["Approximate Distribution"])
+        results["Cocluster Distribution"].append(result["Cocluster Distribution"])
         progress(step + 1, len(models))
     print("... completed.")
     return results
